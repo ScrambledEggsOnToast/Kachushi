@@ -74,7 +74,8 @@ instance Random Suit where
     randomR (a,b) g = first toEnum $ randomR (fromEnum a, fromEnum b) g
     random = randomR (C,S)
 
-data Rank = R2 | R3 | R4 | R5 | R6 | R7 | R8 | R9 | RT | RJ | RQ | RK | RA deriving (Show, Eq, Ord, Enum)
+data Rank = R2 | R3 | R4 | R5 | R6 | R7 | R8 | R9 | RT | RJ | RQ | RK | RA 
+    deriving (Show, Eq, Ord, Enum)
 instance Read (Rank) where
     readsPrec d r = o 
         where 

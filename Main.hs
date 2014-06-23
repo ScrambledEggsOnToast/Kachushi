@@ -11,8 +11,9 @@ import Kachushi.OFCP
 import Control.Lens
 import Control.Monad
 import Control.Monad.State
+import System.Environment (getArgs)
 
-mainK :: K ()
+mainK :: K Int
 mainK = do
     [hand13] <- grabble fullDeck 1 13 
     let hand = take 5 hand13
@@ -26,8 +27,11 @@ mainK = do
     s <- get
     let sc = score . fillBoard [] . view board $ s
     displayBoard
-    liftIO $ print sc
+    return sc
 
 main :: IO ()
 main = do
-    evalStateT mainK initialState
+    [sn] <- getArgs
+    let n = read sn
+    scs <- replicateM n $ evalStateT mainK initialState
+    print ((/ (fromInteger . toInteger $ n)) . fromInteger . toInteger . sum $ scs)

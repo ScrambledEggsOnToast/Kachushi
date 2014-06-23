@@ -1,0 +1,32 @@
+Kachushi/KState.hs:1:1: Splicing declarations
+    makeLenses ''KState
+  ======>
+    Kachushi/KState.hs:19:1-19
+    board :: Lens' KState Board
+    board _f_a2Eo7 (KState __board'_a2Eo8 __deck_a2Eoa)
+      = ((\ __board_a2Eo9 -> KState __board_a2Eo9 __deck_a2Eoa)
+         <$> (_f_a2Eo7 __board'_a2Eo8))
+    {-# INLINE board #-}
+    deck :: Lens' KState [Card]
+    deck _f_a2Eob (KState __board_a2Eoc __deck'_a2Eod)
+      = ((\ __deck_a2Eoe -> KState __board_a2Eoc __deck_a2Eoe)
+         <$> (_f_a2Eob __deck'_a2Eod))
+    {-# INLINE deck #-}
+
+Main.hs:17:17:
+    No instance for (Control.Monad.Random.Class.MonadRandom
+                       (StateT KState IO))
+      arising from a use of ‘grabble’
+    In a stmt of a 'do' block: [hand13] <- grabble fullDeck 1 13
+    In the expression:
+      do { [hand13] <- grabble fullDeck 1 13;
+           let hand = take 5 hand13;
+           rs <- chooseFirstFive hand;
+           putCards (zip hand rs);
+           .... }
+    In an equation for ‘mainK’:
+        mainK
+          = do { [hand13] <- grabble fullDeck 1 13;
+                 let hand = ...;
+                 rs <- chooseFirstFive hand;
+                 .... }

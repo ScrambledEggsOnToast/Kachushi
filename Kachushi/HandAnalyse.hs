@@ -45,12 +45,14 @@ nonUnique = product . map ((.&. 0xff) . binary)
 ---------------------------
 
 handValue :: [Card] -> Int
-handValue h = if flush h then fromJust . SH.lookup (unique h) $ flushesHash
-                else fromMaybe (fromJust . SH.lookup (nonUnique h) $ nonUniqueHash)
+handValue h = if flush h 
+                then fromJust . SH.lookup (unique h) $ flushesHash
+                else fromMaybe 
+                        (fromJust . SH.lookup (nonUnique h) $ nonUniqueHash)
                         (SH.lookup (unique h) uniqueHash)
 
 handValueThree :: [Card] -> Int
-handValueThree hand = handValue filledOutHand
+handValueThree h = fromJust $ SH.lookup (nonUnique h) threeHash {-handValue filledOutHand
     where
         ranks = map (rank) hand
         availableRanks = [R2 ..] \\ ranks
@@ -61,7 +63,7 @@ handValueThree hand = handValue filledOutHand
                      else take 2 availableRanks
         fillSuit = head ([C,D,H,S] \\ map suit hand)
         additionalCards = card <$> fillRanks <*> [fillSuit]
-        filledOutHand = hand ++ additionalCards
+        filledOutHand = hand ++ additionalCards -}
 
 ---------------------------
 --  Hand rating function
@@ -88,3 +90,10 @@ handType hand
     | rating hand <= 3325 = TwoPair
     | rating hand <= 6185 = OnePair
     | otherwise = HighCard
+
+choose :: [b] -> Int -> [[b]]
+_      `choose` 0       = [[]]
+[]     `choose` _       =  []
+(x:xs) `choose` k       =  (x:) `fmap` (xs `choose` (k-1)) ++ xs `choose` k
+
+

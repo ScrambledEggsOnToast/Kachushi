@@ -10,18 +10,22 @@ import Control.Monad
 import Data.List (sortBy, group, intercalate)
 import Data.Function (on)
 import Control.Applicative
+import Control.DeepSeq
 
 ---------------------------
 --  Types
 ---------------------------
 
 data Row = Top | Middle | Bottom deriving (Show, Enum, Eq)
+instance NFData Row where
 data Slot = Empty | Filled Card deriving (Show, Eq)
 data Board = Board 
     { asArray :: Array Int Slot
     , nextTop :: Int
     , nextMiddle :: Int
     , nextBottom :: Int } deriving Show
+instance NFData Board where
+    rnf (Board arr t m b) = arr `seq` t `seq` m `seq` b `seq` ()
 data FilledBoard = FilledBoard { top :: [Card], middle :: [Card], bottom :: [Card] } deriving Show
 
 ---------------------------
@@ -30,6 +34,17 @@ data FilledBoard = FilledBoard { top :: [Card], middle :: [Card], bottom :: [Car
 
 emptyBoard :: Board
 emptyBoard = Board (array (1,13) (zip [1..13] (repeat Empty))) 1 4 9
+
+toBoard :: [Card] -> [Card] -> [Card] -> Board
+toBoard t m b = Board arr nt nm nb
+    where
+        lt = take 3 $ map Filled t ++ repeat Empty
+        lm = take 5 $ map Filled m ++ repeat Empty
+        lb = take 5 $ map Filled b ++ repeat Empty
+        arr = array (1,13) (zip [1..13] (lt ++ lm ++ lb))
+        nt = 1 + length t
+        nm = 4 + length m
+        nb = 9 + length b
 
 filledBoard :: [Card] -> FilledBoard
 filledBoard cards = FilledBoard t m b 
