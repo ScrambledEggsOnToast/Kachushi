@@ -1,8 +1,0 @@
-
-OFCP.hs:3:8:
-    Could not find module ‘Kachushi.Cards’
-    Use -v to see a list of the files searched for.
-
-OFCP.hs:4:8:
-    Could not find module ‘Kachushi.HandAnalyse’
-    Use -v to see a list of the files searched for.
