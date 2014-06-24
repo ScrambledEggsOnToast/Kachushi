@@ -1,3 +1,5 @@
+{-# LANGUAGE TupleSections #-}
+
 module Kachushi.OFCP where
 
 import Kachushi.Cards
@@ -99,10 +101,43 @@ royalty rowType hand
                          . map rank 
                             $ hand
 
-compareHand = compare `on` rating
+compareHand = flip (compare `on` rating)
+
+matches :: [FilledBoard] -> [(Int, Int, FilledBoard, FilledBoard)]
+matches bs = matches' (length bs) where
+    matches' 1 = []
+    matches' n = map (\i -> (i, n-1, bs !! i, bs !! (n-1))) [0 .. n-2] ++ matches' (n-1)
+
+iisToLs :: Int -> (Int, Int, Int) -> [Int]
+iisToLs n (a,b,s) = map (\n -> if n == a then s else if n == b then (-s) else 0) [0 .. n-1]
+
+scoreGame :: [FilledBoard] -> [Int]
+scoreGame bs = foldl (zipWith (+)) (repeat 0) . map (iisToLs (length bs)) $ matchScores
+    where
+        matchScores = map (\(a,b,c,d) -> (a,b,scoreMatch c d)) $ matches bs
+
+scoreMatch :: FilledBoard -> FilledBoard -> Int
+scoreMatch brd1@(FilledBoard t1 m1 b1) brd2@(FilledBoard t2 m2 b2)
+    | fouled brd1 && fouled brd2 = 0
+    | fouled brd2 = 6 + royalty Top t1 + royalty Middle m1 + royalty Bottom b1
+    | fouled brd1 = 0 - scoreMatch brd2 brd1
+    | otherwise = 
+        sum
+        [
+            wt, wm, wb
+          , if abs (wt + wm + wb) == 3 then wt + wm + wb else 0
+          , royalty Top t1, royalty Middle m1, royalty Bottom b1
+          , 0 - royalty Top t2, 0 - royalty Middle m2, 0 - royalty Bottom b2
+        ] where
+            wt = fromEnum (compareHand t1 t2) - 1
+            wm = fromEnum (compareHand m1 m2) - 1
+            wb = fromEnum (compareHand b1 b2) - 1
+
+fouled :: FilledBoard -> Bool
+fouled (FilledBoard t m b) = compareHand t m == GT || compareHand m b == GT
 
 score :: FilledBoard -> Int
-score (FilledBoard t m b) = if compareHand t m == GT && compareHand m b == GT 
+score (FilledBoard t m b) = if compareHand t m == LT && compareHand m b == LT 
                         then 6 + sum [royalty Top t, royalty Middle m, royalty Bottom b]
                         else (-6)
 

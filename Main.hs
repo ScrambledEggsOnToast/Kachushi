@@ -13,27 +13,28 @@ import Control.Monad
 import Control.Monad.State
 import System.Environment (getArgs)
 
-mainK :: K Int
-mainK = do
-    [hand13] <- grabble fullDeck 1 13 
-    let hand = take 5 hand13
-    rs <- chooseFirstFive hand
-    putCards (zip hand rs)
-    forM_ [5..12] $ \n -> do
-        displayBoard
-        let c = hand13 !! n
-        liftIO $ print c
+multi :: Int -> K [Board]
+multi np = do
+    [shuffled] <- grabble fullDeck 1 (np * 13) 
+    let hand13s = zip [0..] $ splice shuffled (replicate np 13)
+    forM_ hand13s $ \(n, hand13) -> do
         s <- get
-        r <- chooseOne c s
-        putCard c r
+        let hand = take 5 hand13
+        chooseFirstFive n hand
+    forM_ [5..12]$ \m -> do
+        forM_ hand13s $ \(n, hand13) -> do
+            let card = hand13 !! m
+            s <- get
+            chooseOne n card
     s <- get
-    let sc = score . fillBoard [] . view board $ s
-    displayBoard
-    return sc
+    return (view boards $ s)
 
 main :: IO ()
 main = do
     [sn] <- getArgs
-    let n = read sn
-    scs <- replicateM n $ evalStateT mainK initialState
-    print ((/ (fromInteger . toInteger $ n)) . fromInteger . toInteger . sum $ scs)
+    let n = read sn :: Int
+
+    brds <- evalStateT (multi n) (initialState n)
+    mapM_ printBoard brds
+    let score = scoreGame $ map (fillBoard []) brds
+    print score

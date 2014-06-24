@@ -15,22 +15,22 @@ import Control.Applicative
 --  Types
 ---------------------------
 
-data KState = KState { _board :: Board , _deck :: [Card] } deriving Show
+data KState = KState { _boards :: [Board] , _deck :: [Card] } deriving Show
 makeLenses ''KState
 
 ---------------------------
 --  Costructors
 ---------------------------
 
-initialState = KState emptyBoard fullDeck
+initialState n = KState (replicate n emptyBoard) fullDeck
 
 ---------------------------
 --  State monad
 ---------------------------
 
-putCard :: MonadState KState m => Card -> Row -> m ()
-putCard card row = modify $ over deck (\\ [card]) 
-                          . over board (putInBoard card row) 
+putCard :: MonadState KState m => Int -> Card -> Row -> m ()
+putCard n card row = modify $ over deck (\\ [card]) 
+                            . over boards (over (element n) (putInBoard card row))
     where
         putInBoard card row board = let
                 t = if row == Top 
@@ -51,27 +51,27 @@ putCard card row = modify $ over deck (\\ [card])
             in
                 Board arr t m b
 
-putCards :: MonadState KState m => [(Card, Row)] -> m ()
-putCards crs = let
-        boardArray state = runSTArray $ do
-            array <- thaw (asArray (view board state))
+putCards :: MonadState KState m => Int -> [(Card, Row)] -> m ()
+putCards n crs = let
+        boardArray brd = runSTArray $ do
+            array <- thaw (asArray brd)
             empties <- newListArray (0,2) 
-                $ [nextTop, nextMiddle, nextBottom] <*> [view board state]
+                $ [nextTop, nextMiddle, nextBottom] <*> [brd]
                     :: (ST s) ((STArray s) Int Int)
             forM_ crs $ \(card, row) -> do
                 index <- readArray empties (fromEnum row)
                 writeArray empties (fromEnum row) (index + 1)
                 writeArray array index (Filled card)
             return array
-        t state = (nextTop . view board $ state) 
+        t brd = (nextTop brd) 
             + (length . filter (== Top) . map snd $ crs)
-        m state = (nextMiddle . view board $ state) 
+        m brd = (nextMiddle brd) 
             + (length . filter (== Middle) . map snd $ crs)
-        b state = (nextBottom . view board $ state) 
+        b brd = (nextBottom brd) 
             + (length . filter (== Bottom) . map snd $ crs)
     in
         do
             state <- get
             modify $ over deck (\\ map fst crs) 
-                . over board (const (Board (boardArray state) 
-                    (t state) (m state) (b state)))
+                . over boards (over (element n) (\brd -> (Board (boardArray brd) 
+                    (t brd) (m brd) (b brd))))

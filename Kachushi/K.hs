@@ -10,5 +10,5 @@ import Kachushi.OFCP
 
 type K = StateT KState IO
 
-displayBoard :: K ()
-displayBoard = do s <- get; liftIO $ printBoard . view board $ s
+displayBoard :: Int -> K ()
+displayBoard n = do s <- get; liftIO $ printBoard . (!! n) . view boards $ s
