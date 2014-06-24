@@ -20,7 +20,9 @@ mainK = do
     rs <- chooseFirstFive hand
     putCards (zip hand rs)
     forM_ [5..12] $ \n -> do
+        displayBoard
         let c = hand13 !! n
+        liftIO $ print c
         s <- get
         r <- chooseOne c s
         putCard c r

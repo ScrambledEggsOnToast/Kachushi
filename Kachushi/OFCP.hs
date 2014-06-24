@@ -7,7 +7,7 @@ import Data.Array
 import Data.Array.ST
 import Control.Monad.ST
 import Control.Monad
-import Data.List (sortBy, group, intercalate)
+import Data.List (maximumBy, sortBy, group, intercalate)
 import Data.Function (on)
 import Control.Applicative
 import Control.DeepSeq
@@ -94,8 +94,7 @@ royalty rowType hand
         otherwise -> 0
         where
             relevantRank = head 
-                         . last 
-                         . sortBy (compare `on` length) 
+                         . maximumBy (compare `on` length) 
                          . group 
                          . map rank 
                             $ hand
@@ -122,4 +121,4 @@ printBoard (Board arr _ _ _) = do
         t = "  " : take 3 shown
         m = take 5 x
         b = take 5 y
-    mapM_ (putStrLn . intercalate " ") [t,m,b]
+    mapM_ (putStrLn . unwords) [t,m,b]

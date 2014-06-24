@@ -6,6 +6,7 @@ import Control.Applicative
 import Data.Word
 import Data.Bits
 import Data.Function (on)
+import qualified Data.Vector as V
 
 ---------------------------
 --  Types
@@ -103,7 +104,7 @@ instance Random Rank where
 ---------------------------
 
 rankBits :: Rank -> Word32
-rankBits r = p .|. ((fromIntegral n) `shiftL` 8) .|. (1 `shiftL` (16+n))
+rankBits r = p .|. (fromIntegral n `shiftL` 8) .|. (1 `shiftL` (16+n))
     where
         p = case r of
             R2 -> 2
@@ -129,7 +130,7 @@ suitBits s = case s of
     S -> 0x1000
 
 bits :: Rank -> Suit -> Word32
-bits r s = (rankBits r) .|. (suitBits s)
+bits r s = rankBits r .|. suitBits s
 
 ---------------------------
 --  Constructors

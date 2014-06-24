@@ -32,7 +32,7 @@ data HandType =
 ---------------------------
 
 flush :: [Card] -> Bool
-flush = (/= 0) . foldl (.&.) (0xf000) . map binary
+flush = (/= 0) . foldl (.&.) 0xf000 . map binary
 
 unique :: [Card] -> Word16
 unique = fromIntegral . (`shiftR` 16) . foldl (.|.) 0 . map binary
