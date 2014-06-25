@@ -2,55 +2,21 @@ module Main where
 
 import Grabble.Grabble
 
-import Kachushi.Cards
-import Kachushi.K
-import Kachushi.Decision
-import Kachushi.KState
-import Kachushi.OFCP
+import Kachushi.Cards (Card, colorPutCard, fullDeck)
+import Kachushi.K (K (..), displayBoards)
+import Kachushi.Decision (chooseOne, chooseFirstFive)
+import Kachushi.KState (putCard, putCards, boards, initialState)
+import Kachushi.OFCP (Board (..), Row (..), scoreGame, fillBoard)
+import Kachushi.Util (splice)
 
-import Control.Lens
-import Control.Monad
-import Control.Monad.State
+import Control.Lens (view)
+import Control.Monad (forM_)
+import Control.Monad.State (liftIO, get, evalStateT)
 import System.Environment (getArgs)
-import System.IO
-import Data.Time.Clock
-import Data.List (transpose, intersperse)
-import Data.Maybe
-
-time :: IO DiffTime
-time = getCurrentTime >>= return . utctDayTime
-
-printT :: (Show a) => DiffTime -> a -> IO ()
-printT rt x = do
-    t <- time
-    let dt = t - rt
-    putStrLn $ show dt ++ ": " ++ show x
-
-multi :: Int -> K [Board]
-multi np = do
-    t <- liftIO time
-    
-    let pr = liftIO . printT t
-
-    pr "begin"
-
-    [shuffled] <- grabble fullDeck 1 (np * 13) 
-    let hand13s = zip [0..] $ splice shuffled (replicate np 13)
-
-    pr "generated hands"
-
-    forM_ hand13s $ \(n, hand13) -> do
-        let hand = take 5 hand13
-        chooseFirstFive n hand
-        pr $ "player " ++ show n ++ " placed first five"
-    forM_ [5..12]$ \m -> do
-        forM_ hand13s $ \(n, hand13) -> do
-            let card = hand13 !! m
-            chooseOne n card
-            pr $ "player " ++ show n ++ " placed card " ++ show (m + 1)
-    s <- get
-
-    return (view boards $ s)
+import Data.List (intersperse)
+import System.IO (stdout, stdin, hSetEcho, hSetBuffering, BufferMode (..))
+import Data.Maybe (fromMaybe, fromJust)
+import Text.Read (readMaybe)
 
 getRow :: IO (Maybe Row)
 getRow = do
@@ -96,7 +62,6 @@ printHand hand = do
     sequence_ . intersperse (putStr ", ") . map colorPutCard $ hand
     putStrLn ""
 
-
 pvc :: Int -> Int -> K ()
 pvc np pp = do
     [shuffled] <- grabble fullDeck 1 (np * 13)
@@ -135,12 +100,30 @@ pvc np pp = do
 
     return ()
     
+usage :: IO ()
+usage = putStrLn 
+    "Usage: Kachushi n p\n\
+    \  n = Number of players (2, 3, or 4).\n\
+    \  p = Human player's seat (0, 1, 2, or 3). A number out of this range\n\
+    \  will cause all players to be computer-controlled.\n\
+    \  To place cards in: the top row, press one of q,w,e,r,t,y,u,i,o,p,\n\
+    \                     the middle row, press one of a,s,d,f,g,h,j,k,l\n\
+    \                     the bottom row, press one of z,x,c,v,b,n,m"
 
 main :: IO ()
 main = do
     hSetBuffering stdin NoBuffering
     hSetBuffering stdout NoBuffering
     
-    [n,p] <- liftM (map read) getArgs :: IO [Int]
+    args <- getArgs
 
-    evalStateT (pvc n p) (initialState n)
+    if "--h" `elem` args then usage else do
+        let argsIntMaybe = mapM readMaybe args :: Maybe [Int]
+        fromMaybe usage $ do
+            argsInt <- argsIntMaybe
+            if length argsInt /=2 then Nothing else do
+                let [n,p] = argsInt
+                if n `elem` [2,3,4] 
+                    then return $ evalStateT (pvc n p) (initialState n)
+                    else Nothing
+

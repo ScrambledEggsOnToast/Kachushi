@@ -1,20 +1,25 @@
-{-# LANGUAGE TemplateHaskell #-}
-module Kachushi.HandAnalyse.Data where
+module Kachushi.HandAnalyse.Data 
+(
+    flushesHash
+  , uniqueHash
+  , nonUniqueHash
+  , threeHash
+) where
 
-import qualified Data.StaticHash as SH
-import Data.Word
+import qualified Data.StaticHash as SH (StaticHash (..), fromList)
+import Data.Word (Word16, Word32)
 
 flushesHash :: SH.StaticHash Word16 Int
-flushesHash = $( [|SH.fromList . filter ( (/= 0) . snd ) . zip [0..] $ flushesList|] )
+flushesHash = SH.fromList . filter ( (/= 0) . snd ) . zip [0..] $ flushesList
 
 uniqueHash :: SH.StaticHash Word16 Int
-uniqueHash = $( [|SH.fromList . filter ( (/= 0) . snd ) . zip [0..] $ uniqueList|] )
+uniqueHash = SH.fromList . filter ( (/= 0) . snd ) . zip [0..] $ uniqueList
 
 nonUniqueHash :: SH.StaticHash Word32 Int
-nonUniqueHash = $( [|SH.fromList $ zip nonUniqueProducts nonUniqueValues|] )
+nonUniqueHash = SH.fromList $ zip nonUniqueProducts nonUniqueValues
 
 threeHash :: SH.StaticHash Word32 Int
-threeHash = $([| SH.fromList threeList|])
+threeHash = SH.fromList threeList
 
 flushesList = [
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,

@@ -1,15 +1,23 @@
 {-# LANGUAGE TemplateHaskell, FlexibleContexts #-}
-module Kachushi.KState where
+module Kachushi.KState 
+(
+    KState (..)
+  , boards
+  , deck
+  , initialState
+  , putCard
+  , putCards
+) where
 
-import Kachushi.Cards
-import Kachushi.OFCP
+import Kachushi.Cards (Card (..), fullDeck)
+import Kachushi.OFCP (Board (..), emptyBoard, Slot (..), Row (..))
 
-import Control.Lens
-import Control.Monad.State
+import Control.Lens (over, makeLenses, element)
+import Control.Monad.State (MonadState (..), get, modify, forM_)
 import Data.List ((\\))
-import Data.Array.ST
-import Control.Monad.ST
-import Control.Applicative
+import Data.Array.ST (runSTArray, thaw, newListArray, STArray (..), readArray, writeArray)
+import Control.Monad.ST (ST (..))
+import Control.Applicative ((<*>))
 
 ---------------------------
 --  Types
@@ -29,28 +37,7 @@ initialState n = KState (replicate n emptyBoard) fullDeck
 ---------------------------
 
 putCard :: MonadState KState m => Int -> Card -> Row -> m ()
-putCard n card row = 
-    modify $ over deck (\\ [card]) 
-           . over boards (over (element n) (putInBoard card row))
-    where
-        putInBoard card row board = let
-                t = if row == Top 
-                        then nextTop board + 1 
-                        else nextTop board
-                m = if row == Middle 
-                        then nextMiddle board + 1 
-                        else nextMiddle board
-                b = if row == Bottom 
-                        then nextBottom board + 1 
-                        else nextBottom board
-                arr = runSTArray $ do
-                    array <- thaw (asArray board)
-                    let index = ([nextTop, nextMiddle, nextBottom] <*> [board]) 
-                                !! fromEnum row
-                    writeArray array index (Filled card)
-                    return array
-            in
-                Board arr t m b
+putCard n card row = putCards n [(card, row)]
 
 putCards :: MonadState KState m => Int -> [(Card, Row)] -> m ()
 putCards n crs = let

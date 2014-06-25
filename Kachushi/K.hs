@@ -1,12 +1,15 @@
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances#-}
-module Kachushi.K where
+module Kachushi.K 
+(
+    K (..)
+  , displayBoards
+) where
 
-import Control.Monad.Random
-import Control.Monad.State
-import Control.Lens
+import Control.Monad.State (StateT, get, liftIO)
+import Control.Lens (view)
 
-import Kachushi.KState
-import Kachushi.OFCP
+import Kachushi.KState (KState (..), boards)
+import Kachushi.OFCP (printBoard, printBoards)
 
 type K = StateT KState IO
 

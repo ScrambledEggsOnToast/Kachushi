@@ -1,0 +1,31 @@
+.cabal-sandbox/bin/Kachushi 4 -1 +RTS -N -s# 
+   4,198,566,760 bytes allocated in the heap
+     410,187,872 bytes copied during GC
+      14,262,864 bytes maximum residency (86 sample(s))
+         255,352 bytes maximum slop
+              35 MB total memory in use (0 MB lost due to fragmentation)
+
+                                    Tot time (elapsed)  Avg pause  Max pause
+  Gen  0      2450 colls,  2450 par    0.83s    0.22s     0.0001s    0.0126s
+  Gen  1        86 colls,    85 par    0.30s    0.08s     0.0009s    0.0052s
+
+  Parallel GC work balance: 62.32% (serial 0%, perfect 100%)
+
+  TASKS: 10 (1 bound, 9 peak workers (9 total), using -N4)
+
+  SPARKS: 30689 (29843 converted, 0 overflowed, 0 dud, 809 GC'd, 37 fizzled)
+
+  INIT    time    0.00s  (  0.00s elapsed)
+  MUT     time    1.98s  (  0.61s elapsed)
+  GC      time    1.13s  (  0.30s elapsed)
+  EXIT    time    0.00s  (  0.00s elapsed)
+  Total   time    3.11s  (  0.91s elapsed)
+
+  Alloc rate    2,125,037,178 bytes per MUT second
+
+  Productivity  63.5% of total user, 218.2% of total elapsed
+
+gc_alloc_block_sync: 36826
+whitehole_spin: 0
+gen[0].sync: 540
+gen[1].sync: 4378

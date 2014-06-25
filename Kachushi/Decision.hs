@@ -1,25 +1,28 @@
 {-# LANGUAGE TupleSections, FlexibleContexts #-}
-module Kachushi.Decision where
+module Kachushi.Decision 
+(
+    chooseFirstFive
+  , chooseOne
+)  where
 
 import Grabble.Grabble
 
-import Kachushi.Cards
-import Kachushi.HandAnalyse
-import Kachushi.OFCP
-import Kachushi.KState
+import Kachushi.Cards (Card (..))
+import Kachushi.OFCP (Board (..), FilledBoard (..), Row (..), Slot (..), toBoard, scoreGame)
+import Kachushi.KState (KState (..), boards, deck, putCard, putCards)
+import Kachushi.Util (splice)
 
-import Control.Parallel.Strategies
-import Control.DeepSeq
-import Control.Monad.Random
-import Control.Monad
-import qualified Control.Monad.Parallel as MP
-import Control.Monad.State
-import Control.Lens
-import Control.Arrow
+import Control.Parallel.Strategies (parMap, rdeepseq)
+import Control.DeepSeq (force)
+import Control.Monad.Random (MonadRandom (..))
+import Control.Monad (liftM, replicateM)
+import qualified Control.Monad.Parallel as MP (mapM, MonadParallel (..))
+import Control.Monad.State (MonadState (..), StateT (..), runStateT, evalStateT, execState, modify)
+import Control.Lens (view, (&), ix, (.~), set)
+import Control.Arrow (second)
 import Data.List (maximumBy, sortBy, (\\))
 import Data.Function (on)
-import Data.Array
-import qualified Data.Vector as V
+import Data.Array (elems)
 
 instance MP.MonadParallel m => MP.MonadParallel (StateT s m) where
     bindM2 f ma mb = 
@@ -118,7 +121,3 @@ chooseOne n card = do
             
             modify (set boards (sb & ix n .~ (fst best)) . set deck d)
 
-splice :: [a] -> [Int] -> [[a]]
-splice [] [] = []
-splice xs [] = [xs]
-splice xs (n:ns) = take n xs : splice (drop n xs) ns

@@ -1,18 +1,31 @@
 {-# LANGUAGE TupleSections #-}
 
-module Kachushi.OFCP where
+module Kachushi.OFCP 
+(
+    Row (..)
+  , Slot (..)
+  , Board (..)
+  , FilledBoard (..)
+  , emptyBoard
+  , toBoard
+  , filledBoard
+  , fillBoard
+  , scoreGame
+  , printBoard
+  , printBoards
+) where
 
-import Kachushi.Cards
-import Kachushi.HandAnalyse
+import Kachushi.Cards (Card (..), card, colorPutCard)
+import Kachushi.HandAnalyse (HandType (..), compareHand, handType)
 
-import Data.Array
-import Data.Array.ST
-import Control.Monad.ST
-import Control.Monad
-import Data.List (maximumBy, sortBy, group, intercalate, intersperse)
+import Data.Array (Array (..), array, elems)
+import Data.Array.ST (STArray (..), runSTArray, thaw, freeze, newListArray, writeArray, readArray)
+import Control.Monad (forM_)
+import Control.Monad.ST (ST (..))
+import Data.List (maximumBy, group, intersperse)
+import Control.Applicative ((<*>))
+import Control.DeepSeq (NFData (..))
 import Data.Function (on)
-import Control.Applicative
-import Control.DeepSeq
 
 ---------------------------
 --  Types
@@ -113,8 +126,6 @@ royalty rowType hand
                          . map rank 
                             $ hand
 
-compareHand = flip (compare `on` rating)
-
 matches :: [FilledBoard] -> [(Int, Int, FilledBoard, FilledBoard)]
 matches bs = matches' (length bs) where
     matches' 1 = []
@@ -163,20 +174,6 @@ score (FilledBoard t m b) =
 --  Board printer
 ---------------------------
 
-showBoard :: Board -> String
-showBoard (Board arr _ _ _) =
-    let cs = elems arr
-        shown = map showSlot cs
-        showSlot Empty = "[]"
-        showSlot (Filled c) = show c
-        x = drop 3 shown
-        y = drop 5 x
-        t = "  " : take 3 shown
-        m = take 5 x
-        b = take 5 y
-    in  unlines . map unwords $ [t,m,b]
-
-
 printBoard :: Board -> IO ()
 printBoard (Board arr _ _ _) = 
     do
@@ -197,31 +194,8 @@ printBoard (Board arr _ _ _) =
         putStrLn ""
 
 
-showBoards :: Int -> [Board] -> String
-showBoards pp brds = showBoards' $ rotate pp brds
-
-showBoards' :: [Board] -> String
-
-showBoards' [a] = showBoard a
-
-showBoards' [a,b] = showBoard b ++ showBoard a
-
-showBoards' [a,b,c] = 
-    ((\[(b1,c1),(b2,c2),(b3,c3)] -> unlines 
-        [ b1 ++ "       " ++ c1
-        , b2 ++ "    " ++ c2
-        , b3 ++ "    "++ c3 ]) 
-    $ zip (lines . showBoard $ b) (lines . showBoard $ c)) 
-    ++ "\n" ++ 
-    unlines (map ("         "++) (lines . showBoard $ a))
-
-showBoards' [a,b,c,d] = 
-    unlines (map ("         "++) (lines . showBoard $ c)) 
-    ++ "\n" ++ 
-    showBoards' [a,b,d]
-
 printBoards :: Int -> [Board] -> IO ()
-printBoards pp = sequence_ . intersperse (putStrLn "") . map printBoard . reverse 
+printBoards pp = sequence_ . intersperse (putStrLn "") . map printBoard  
 --printBoards pp = putStr . showBoards pp
 
 rotate :: Int -> [a] -> [a]

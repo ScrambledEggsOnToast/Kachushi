@@ -1,13 +1,19 @@
-module Kachushi.Cards where
+module Kachushi.Cards 
+(
+    Card (..)
+  , Suit (..)
+  , Rank (..)
+  , card
+  , fullDeck
+  , colorPutCard
+) where
 
-import System.Random
-import Control.Arrow
-import Control.Applicative
-import Data.Word
-import Data.Bits
+import Control.Applicative ((<$>), (<*>))
+import Data.Word (Word32)
+import Data.Bits ((.|.), shiftL)
 import Data.Function (on)
-import Control.DeepSeq
-import System.Console.ANSI
+import Control.DeepSeq (NFData (..))
+import System.Console.ANSI (setSGR, SGR (SetColor, Reset), Color (Green, Cyan, Red, Blue), ConsoleLayer (Foreground), ColorIntensity (Dull))
 
 ---------------------------
 --  Types
@@ -52,23 +58,6 @@ instance Read (Card) where
     readsPrec _ _ = []
 instance Eq Card where
     (==) = (==) `on` binary
-instance Random Card where
-    randomR (a,b) g = (card r s, g2)
-        where
-            minR = toEnum $ min (fromEnum $ rank a) (fromEnum $ rank b)
-            maxR = toEnum $ max (fromEnum $ rank a) (fromEnum $ rank b)
-            minS = toEnum $ min (fromEnum $ suit a) (fromEnum $ suit b)
-            maxS = toEnum $ max (fromEnum $ suit a) (fromEnum $ suit b)
-            r = fst $ randomR (minR, maxR) g
-            s = fst $ randomR (minS, maxS) g1
-            g1 = snd . next $ g
-            g2 = snd . next $ g1
-    random g = (card r s, g2)
-        where
-            r = fst $ random g
-            s = fst $ random g1
-            g1 = snd . next $ g
-            g2 = snd . next $ g1
 
 data Suit = C | D | H | S deriving (Show, Eq, Ord, Enum)
 instance Read (Suit) where
@@ -80,9 +69,6 @@ instance Read (Suit) where
                 "h" -> [(H,"")]
                 "s" -> [(S,"")]
                 otherwise -> []
-instance Random Suit where
-    randomR (a,b) g = first toEnum $ randomR (fromEnum a, fromEnum b) g
-    random = randomR (C,S)
 
 data Rank = R2 | R3 | R4 | R5 | R6 | R7 | R8 | R9 | RT | RJ | RQ | RK | RA 
     deriving (Show, Eq, Ord, Enum)
@@ -104,9 +90,6 @@ instance Read (Rank) where
                 "K" -> [(RK,"")]
                 "A" -> [(RA,"")]
                 otherwise -> []
-instance Random Rank where
-    randomR (a,b) g = first toEnum $ randomR (fromEnum a, fromEnum b) g
-    random = randomR (R2,RA)
 
 ---------------------------
 --  Conversion from rank-suit representation to bit representation

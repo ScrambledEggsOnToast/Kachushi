@@ -1,14 +1,18 @@
-module Kachushi.HandAnalyse where
+module Kachushi.HandAnalyse 
+(
+    HandType (..)
+  , compareHand
+  , handType
+) where
 
-import Kachushi.Cards
+import Kachushi.Cards (Card (..), Suit (..), Rank (..))
 import Kachushi.HandAnalyse.Data
 
-import Data.Word
-import Data.Bits
-import qualified Data.StaticHash as SH
-import Data.Maybe
-import Data.List ((\\))
-import Control.Applicative
+import Data.Word (Word16, Word32)
+import Data.Bits ((.|.), (.&.), shiftR)
+import qualified Data.StaticHash as SH (lookup)
+import Data.Maybe (fromJust, fromMaybe)
+import Data.Function (on)
 
 ---------------------------
 --  Types
@@ -72,6 +76,8 @@ rating hand
     | length hand == 5 = handValue hand
     | length hand == 3 = handValueThree hand
 
+compareHand = flip (compare `on` rating)
+
 ---------------------------
 --  Hand type function
 ---------------------------
@@ -88,10 +94,4 @@ handType hand
     | rating hand <= 3325 = TwoPair
     | rating hand <= 6185 = OnePair
     | otherwise = HighCard
-
-choose :: [b] -> Int -> [[b]]
-_      `choose` 0       = [[]]
-[]     `choose` _       =  []
-(x:xs) `choose` k       =  (x:) `fmap` (xs `choose` (k-1)) ++ xs `choose` k
-
 
