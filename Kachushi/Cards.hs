@@ -7,6 +7,7 @@ import Data.Word
 import Data.Bits
 import Data.Function (on)
 import Control.DeepSeq
+import System.Console.ANSI
 
 ---------------------------
 --  Types
@@ -149,3 +150,12 @@ card r s = Card (bits r s) r s
 
 fullDeck :: [Card]
 fullDeck = card <$> [R2 ..] <*> [C ..]
+
+
+
+colorPutCard :: Card -> IO ()
+colorPutCard c@(Card _ _ s) = do
+    let color = [Green, Cyan, Red, Blue] !! (fromEnum s)
+    setSGR [SetColor Foreground Dull color]
+    putStr . show $ c
+    setSGR [Reset]

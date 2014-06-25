@@ -14,7 +14,7 @@ import Control.Monad.State
 import System.Environment (getArgs)
 import System.IO
 import Data.Time.Clock
-import Data.List (transpose)
+import Data.List (transpose, intersperse)
 import Data.Maybe
 
 time :: IO DiffTime
@@ -82,10 +82,20 @@ checkedGetRow n = do
 
 requestRow :: Int -> Card -> K Row
 requestRow n c = do
-    liftIO $ putStr $ show c ++ ": "
+    liftIO $ colorPutCard c
+    liftIO $ putStr ": "
     r <- checkedGetRow n
     liftIO $ putStrLn $ show r
     return r
+
+divider :: IO ()
+divider = putStrLn "\n--------\n"
+
+printHand :: [Card] -> IO ()
+printHand hand = do
+    sequence_ . intersperse (putStr ", ") . map colorPutCard $ hand
+    putStrLn ""
+
 
 pvc :: Int -> Int -> K [Board]
 pvc np pp = do
@@ -96,7 +106,8 @@ pvc np pp = do
         let hand = take 5 hand13
         if n == pp then do
             displayBoards pp
-            liftIO $ print hand
+            liftIO $ printHand hand
+
             forM_ hand $ \c -> do
                 r <- requestRow pp c
                 putCard pp c r
@@ -107,12 +118,13 @@ pvc np pp = do
         forM_ hand13s $ \(n, hand13) -> do
             let c = hand13 !! m
             if n == pp then do
+                    liftIO divider
                     displayBoards pp
                     r <- requestRow pp c
                     putCard pp c r
                 else do
                     chooseOne n c
-
+    liftIO divider
     displayBoards pp
 
     s <- get

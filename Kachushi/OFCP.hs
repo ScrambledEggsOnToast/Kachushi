@@ -9,7 +9,7 @@ import Data.Array
 import Data.Array.ST
 import Control.Monad.ST
 import Control.Monad
-import Data.List (maximumBy, sortBy, group, intercalate)
+import Data.List (maximumBy, sortBy, group, intercalate, intersperse)
 import Data.Function (on)
 import Control.Applicative
 import Control.DeepSeq
@@ -178,10 +178,29 @@ showBoard (Board arr _ _ _) =
 
 
 printBoard :: Board -> IO ()
-printBoard = putStr . showBoard
+printBoard (Board arr _ _ _) = 
+    do
+        let cs = elems arr
+            shown = map showSlot cs
+            showSlot Empty = putStr "[]"
+            showSlot (Filled c) = colorPutCard c
+            x = drop 3 shown
+            y = drop 5 x
+            t = putStr "  " : take 3 shown
+            m = take 5 x
+            b = take 5 y
+        sequence_ . intersperse (putStr " ") $ t
+        putStrLn ""
+        sequence_ . intersperse (putStr " ") $ m
+        putStrLn ""
+        sequence_ . intersperse (putStr " ") $ b
+        putStrLn ""
+
 
 showBoards :: Int -> [Board] -> String
 showBoards pp brds = showBoards' $ rotate pp brds
+
+showBoards' :: [Board] -> String
 
 showBoards' [a] = showBoard a
 
@@ -202,7 +221,8 @@ showBoards' [a,b,c,d] =
     showBoards' [a,b,d]
 
 printBoards :: Int -> [Board] -> IO ()
-printBoards pp = putStr . showBoards pp
+printBoards pp = sequence_ . intersperse (putStrLn "") . map printBoard . reverse 
+--printBoards pp = putStr . showBoards pp
 
 rotate :: Int -> [a] -> [a]
 rotate _ [] = []
