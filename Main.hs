@@ -16,7 +16,6 @@ import System.IO
 import Data.Time.Clock
 import Data.List (transpose)
 import Data.Maybe
-import qualified Data.Set as Set
 
 time :: IO DiffTime
 time = getCurrentTime >>= return . utctDayTime
@@ -35,7 +34,7 @@ multi np = do
 
     pr "begin"
 
-    [shuffled] <- grabble (Set.toList fullDeck) 1 (np * 13) 
+    [shuffled] <- grabble fullDeck 1 (np * 13) 
     let hand13s = zip [0..] $ splice shuffled (replicate np 13)
 
     pr "generated hands"
@@ -81,37 +80,41 @@ checkedGetRow n = do
         Middle -> if m == 9 then checkedGetRow n else return Middle
         Bottom -> if b == 14 then checkedGetRow n else return Bottom
 
-pvc :: Int -> K [Board]
-pvc np = do
-    [shuffled] <- grabble (Set.toList fullDeck) 1 (np * 13)
-    let hand13s = splice shuffled (replicate np 13)
-    let hand13p = head hand13s
-    let hand13sc = zip [1..] $ tail hand13s
+requestRow :: Int -> Card -> K Row
+requestRow n c = do
+    liftIO $ putStr $ show c ++ ": "
+    r <- checkedGetRow n
+    liftIO $ putStrLn $ show r
+    return r
 
-    let handp = take 5 hand13p
-    displayBoards
-    liftIO $ print handp
+pvc :: Int -> Int -> K [Board]
+pvc np pp = do
+    [shuffled] <- grabble fullDeck 1 (np * 13)
+    let hand13s = zip [0..] $ splice shuffled (replicate np 13)
 
-    forM_ handp $ \c -> do
-        liftIO $ putStr $ show c ++ ": "
-        r <- checkedGetRow 0
-        liftIO $ putStrLn $ show r
-        putCard 0 c r
-
-    forM_ hand13sc $ \(n, hand13) -> do
+    forM_ hand13s $ \(n, hand13) -> do
         let hand = take 5 hand13
-        chooseFirstFive n hand
+        if n == pp then do
+            displayBoards pp
+            liftIO $ print hand
+            forM_ hand $ \c -> do
+                r <- requestRow pp c
+                putCard pp c r
+            else do
+                chooseFirstFive n hand
+
     forM_ [5..12]$ \m -> do
-        displayBoards
-        let cardp = hand13p !! m
-        liftIO $ putStr $ show cardp ++ ": "
-        choice <- checkedGetRow 0
-        liftIO $ putStrLn $ show choice
-        putCard 0 cardp choice
-        forM_ hand13sc $ \(n, hand13) -> do
-            let card = hand13 !! m
-            chooseOne n card
-    displayBoards
+        forM_ hand13s $ \(n, hand13) -> do
+            let c = hand13 !! m
+            if n == pp then do
+                    displayBoards pp
+                    r <- requestRow pp c
+                    putCard pp c r
+                else do
+                    chooseOne n c
+
+    displayBoards pp
+
     s <- get
     return (view boards $ s)
     
@@ -121,9 +124,8 @@ main = do
     hSetBuffering stdin NoBuffering
     hSetBuffering stdout NoBuffering
     
-    [sn] <- getArgs
-    let n = read sn :: Int
+    [n,p] <- liftM (map read) getArgs :: IO [Int]
 
-    brds <- evalStateT (pvc n) (initialState n)
+    brds <- evalStateT (pvc n p) (initialState n)
     
     print . scoreGame . map (fillBoard []) $ brds

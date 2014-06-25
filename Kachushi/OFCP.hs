@@ -20,8 +20,10 @@ import Control.DeepSeq
 
 data Row = Top | Middle | Bottom deriving (Show, Enum, Eq, Read)
 instance NFData Row where
+
 data Slot = Empty | Filled Card deriving (Show, Eq)
 instance NFData Slot where
+
 data Board = Board 
     { asArray :: Array Int Slot
     , nextTop :: Int
@@ -29,7 +31,11 @@ data Board = Board
     , nextBottom :: Int } deriving Show
 instance NFData Board where
     rnf (Board arr t m b) = (rnf arr) `seq` t `seq` m `seq` b `seq` ()
-data FilledBoard = FilledBoard { top :: [Card], middle :: [Card], bottom :: [Card] } deriving Show
+
+data FilledBoard = FilledBoard 
+    { top :: [Card]
+    , middle :: [Card]
+    , bottom :: [Card] } deriving Show
 instance NFData FilledBoard where
     rnf (FilledBoard t m b) = (rnf t) `seq` (rnf m) `seq` (rnf b)
 
@@ -61,14 +67,17 @@ filledBoard cards = FilledBoard t m b
         b = take 5 y
 
 fillBoard :: [(Card, Row)] -> Board -> FilledBoard
-fillBoard choices board = filledBoard . map (\(Filled c) -> c) . elems $ runSTArray (do
-    array <- thaw (asArray board)
-    empties <- newListArray (0,2) $ [nextTop, nextMiddle, nextBottom] <*> [board] :: (ST s) ((STArray s) Int Int)
-    forM_ choices $ \(card, row) -> do
-        index <- readArray empties (fromEnum row)
-        writeArray empties (fromEnum row) (index + 1)
-        writeArray array index (Filled card)
-    return array)
+fillBoard choices board = filledBoard . map (\(Filled c) -> c) . elems 
+    $ runSTArray $ do
+        array <- thaw (asArray board)
+        empties <- newListArray (0,2) 
+            $ [nextTop, nextMiddle, nextBottom] <*> [board] 
+                :: (ST s) ((STArray s) Int Int)
+        forM_ choices $ \(card, row) -> do
+            index <- readArray empties (fromEnum row)
+            writeArray empties (fromEnum row) (index + 1)
+            writeArray array index (Filled card)
+        return array
 
 ---------------------------
 --  Board scorer
@@ -109,13 +118,18 @@ compareHand = flip (compare `on` rating)
 matches :: [FilledBoard] -> [(Int, Int, FilledBoard, FilledBoard)]
 matches bs = matches' (length bs) where
     matches' 1 = []
-    matches' n = map (\i -> (i, n-1, bs !! i, bs !! (n-1))) [0 .. n-2] ++ matches' (n-1)
+    matches' n = map (\i -> (i, n-1, bs !! i, bs !! (n-1))) [0 .. n-2] 
+                    ++ matches' (n-1)
 
 iisToLs :: Int -> (Int, Int, Int) -> [Int]
-iisToLs n (a,b,s) = map (\n -> if n == a then s else if n == b then (-s) else 0) [0 .. n-1]
+iisToLs n (a,b,s) = map (\n -> if n == a then s 
+                          else if n == b then (-s) 
+                           else 0) [0 .. n-1]
 
 scoreGame :: [FilledBoard] -> [Int]
-scoreGame bs = foldl (zipWith (+)) (repeat 0) . map (iisToLs (length bs)) $ matchScores
+scoreGame bs = foldl (zipWith (+)) (repeat 0) 
+             . map (iisToLs (length bs)) 
+             $ matchScores
     where
         matchScores = map (\(a,b,c,d) -> (a,b,scoreMatch c d)) $ matches bs
 
@@ -140,9 +154,10 @@ fouled :: FilledBoard -> Bool
 fouled (FilledBoard t m b) = compareHand t m == GT || compareHand m b == GT
 
 score :: FilledBoard -> Int
-score (FilledBoard t m b) = if compareHand t m == LT && compareHand m b == LT 
-                        then 6 + sum [royalty Top t, royalty Middle m, royalty Bottom b]
-                        else (-6)
+score (FilledBoard t m b) = 
+    if compareHand t m == LT && compareHand m b == LT 
+        then 6 + sum [royalty Top t, royalty Middle m, royalty Bottom b]
+        else (-6)
 
 ---------------------------
 --  Board printer
@@ -165,10 +180,30 @@ showBoard (Board arr _ _ _) =
 printBoard :: Board -> IO ()
 printBoard = putStr . showBoard
 
-showBoards :: [Board] -> String
-showBoards [a] = showBoard a
-showBoards [a,b] = showBoard b ++ showBoard a
-showBoards [a,b,c] = ((\[(b1,c1),(b2,c2),(b3,c3)] -> unlines [b1 ++ "       " ++ c1,b2 ++ "    " ++ c2,b3 ++ "    "++ c3]) $ zip (lines . showBoard $ b) (lines . showBoard $ c)) ++ "\n" ++ unlines (map ("         "++) (lines . showBoard $ a))
-showBoards [a,b,c,d] = unlines (map ("         "++) (lines . showBoard $ c)) ++ "\n" ++ showBoards [a,b,d]
-printBoards :: [Board] -> IO ()
-printBoards = putStr . showBoards
+showBoards :: Int -> [Board] -> String
+showBoards pp brds = showBoards' $ rotate pp brds
+
+showBoards' [a] = showBoard a
+
+showBoards' [a,b] = showBoard b ++ showBoard a
+
+showBoards' [a,b,c] = 
+    ((\[(b1,c1),(b2,c2),(b3,c3)] -> unlines 
+        [ b1 ++ "       " ++ c1
+        , b2 ++ "    " ++ c2
+        , b3 ++ "    "++ c3 ]) 
+    $ zip (lines . showBoard $ b) (lines . showBoard $ c)) 
+    ++ "\n" ++ 
+    unlines (map ("         "++) (lines . showBoard $ a))
+
+showBoards' [a,b,c,d] = 
+    unlines (map ("         "++) (lines . showBoard $ c)) 
+    ++ "\n" ++ 
+    showBoards' [a,b,d]
+
+printBoards :: Int -> [Board] -> IO ()
+printBoards pp = putStr . showBoards pp
+
+rotate :: Int -> [a] -> [a]
+rotate _ [] = []
+rotate n xs = zipWith const (drop n (cycle xs)) xs

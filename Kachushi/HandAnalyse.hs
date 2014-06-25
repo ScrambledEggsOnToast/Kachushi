@@ -61,18 +61,7 @@ handValue h = if flush h
                         (SH.lookup (unique h) uniqueHash)
 
 handValueThree :: [Card] -> Int
-handValueThree h = fromJust $ SH.lookup (nonUnique h) threeHash {-handValue filledOutHand
-    where
-        ranks = map (rank) hand
-        availableRanks = [R2 ..] \\ ranks
-        fillRanks = if (all (`elem` [R2,R3,R4,R5,R6]) ranks)
-                        || (all (`elem` [RA,R2,R3,R4,R5]) ranks)
-                        && ((==3) . length $ ranks)
-                     then [head availableRanks, availableRanks !! 2]
-                     else take 2 availableRanks
-        fillSuit = head ([C,D,H,S] \\ map suit hand)
-        additionalCards = card <$> fillRanks <*> [fillSuit]
-        filledOutHand = hand ++ additionalCards -}
+handValueThree h = fromJust $ SH.lookup (nonUnique h) threeHash
 
 ---------------------------
 --  Hand rating function

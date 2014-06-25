@@ -7,8 +7,6 @@ import Data.Word
 import Data.Bits
 import Data.Function (on)
 import Control.DeepSeq
-import qualified Data.Vector as V
-import qualified Data.Set as Set
 
 ---------------------------
 --  Types
@@ -149,5 +147,5 @@ bits r s = rankBits r .|. suitBits s
 card :: Rank -> Suit -> Card
 card r s = Card (bits r s) r s
 
-fullDeck :: Set.Set Card
-fullDeck = Set.fromList $ card <$> [R2 ..] <*> [C ..]
+fullDeck :: [Card]
+fullDeck = card <$> [R2 ..] <*> [C ..]

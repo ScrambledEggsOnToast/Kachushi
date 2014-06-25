@@ -20,11 +20,11 @@ import Data.List (maximumBy, sortBy, (\\))
 import Data.Function (on)
 import Data.Array
 import qualified Data.Vector as V
-import qualified Data.Set as Set
-import qualified Data.Sequence as Seq
 
 instance MP.MonadParallel m => MP.MonadParallel (StateT s m) where
-    bindM2 f ma mb = StateT (\s -> let f' a b = runStateT (f a b) s in MP.bindM2 f' (evalStateT ma s) (evalStateT mb s))            
+    bindM2 f ma mb = 
+        StateT (\s -> let f' a b = runStateT (f a b) s 
+            in MP.bindM2 f' (evalStateT ma s) (evalStateT mb s))            
 
 ---------------------------
 --  Constructor
@@ -32,23 +32,23 @@ instance MP.MonadParallel m => MP.MonadParallel (StateT s m) where
 
 randomFills :: (MonadRandom m) => [Card] -> [Board] -> m [FilledBoard]
 randomFills deck boards = do
-    let cardsLefts = force $ map (\board -> 27 - nextTop board
+    let cardsLefts = map (\board -> 27 - nextTop board
                                        - nextMiddle board 
-                                       - nextBottom board)
-                   $ boards
+                                       - nextBottom board) $ boards
     [newCards] <- liftM force $ grabble deck 1 (sum cardsLefts)
-    let newCardss = force $ splice newCards cardsLefts
+    let newCardss = splice newCards cardsLefts
 
-    let oldRowss = force $ map (\board -> map (map (\(Filled c) -> c) 
+    let oldRowss = map (\board -> map (map (\(Filled c) -> c) 
                                 . takeWhile (/= Empty)) 
                                 . splice (elems . asArray $ board) 
                                 $ [3,5,5]) boards
         
-        additionCounts = force $ map (\board -> 
-            [4 - nextTop board, 9 - nextMiddle board, 14 - nextBottom board]) boards
-        additionss = force $ zipWith splice newCardss additionCounts
+        additionCounts = (flip map) boards (\board -> 
+            [4 - nextTop board, 9 - nextMiddle board, 14 - nextBottom board])
 
-        tmbs = force $ zipWith (zipWith (++)) oldRowss additionss
+        additionss = zipWith splice newCardss additionCounts
+
+        tmbs = zipWith (zipWith (++)) oldRowss additionss
 
     return $ force $ map (\[t, m, b] -> FilledBoard t m b) tmbs
 
@@ -71,17 +71,19 @@ rowsToBoard rs h = toBoard t m b where
     m = map snd . filter ((== Middle) . fst) $ cs
     b = map snd . filter ((== Bottom) . fst) $ cs
 
-chooseFirstFive :: (MonadState KState m, MonadRandom m, MP.MonadParallel m) => Int -> [Card] -> m ()
+chooseFirstFive :: (MonadState KState m, MonadRandom m, MP.MonadParallel m) 
+    => Int -> [Card] -> m ()
 chooseFirstFive n hand = do
     s <- get
-    let d = (view deck s) Set.\\ (Set.fromList hand)
+    let d = (view deck s) \\ hand
         sb = view boards s
 
     xs <- (flip MP.mapM) initialChoices $ \rs -> do 
         let b = force $ rowsToBoard rs hand
-        liftM (b,) $ replicateM 10 $ randomFills (Set.toList d) (sb & ix n .~ b)
+        liftM (b,) $ replicateM 10 $ randomFills d (sb & ix n .~ b)
     
-    let scoredRows = parMap rdeepseq (second (sum . map ((!! n) . scoreGame))) xs
+    let scoredRows = parMap rdeepseq 
+                        (second (sum . map ((!! n) . scoreGame))) xs
         best = maximumBy (compare `on` snd) scoredRows
     
     modify (set boards (sb & ix n .~ (fst best)) . set deck d)
@@ -94,7 +96,8 @@ rowsToCheck n st
 
 rowToBoard n r s c = (!! n) . view boards $ execState (putCard n c r) s
 
-chooseOne :: (MonadState KState m, MonadRandom m, MP.MonadParallel m) => Int -> Card -> m ()
+chooseOne :: (MonadState KState m, MonadRandom m, MP.MonadParallel m) 
+    => Int -> Card -> m ()
 chooseOne n card = do
     s <- get
     case (!! n) . view boards $ s of
@@ -102,13 +105,15 @@ chooseOne n card = do
         Board _ 4 _ 14 -> putCard n card Middle
         Board _ 4 9 _ -> putCard n card Bottom
         otherwise -> do
-            let d = view deck s Set.\\ (Set.singleton card)
+            let d = view deck s \\ [card]
                 rbs = map (\r -> (r, rowToBoard n r s card)) (rowsToCheck n s)
                 sb = view boards s
 
-            xs <- MP.mapM (\(r,b) -> liftM (b,) $ replicateM 500 $ randomFills (Set.toList d) (sb & ix n .~ b)) rbs
+            xs <- MP.mapM (\(r,b) -> liftM (b,) $ replicateM 500
+                $ randomFills d (sb & ix n .~ b)) rbs
 
-            let scoredRows = map (second (sum . parMap rdeepseq ((!! n) . scoreGame))) xs
+            let scoredRows = map 
+                    (second (sum . parMap rdeepseq ((!! n) . scoreGame))) xs
                 best = maximumBy (compare `on` snd) scoredRows
             
             modify (set boards (sb & ix n .~ (fst best)) . set deck d)
