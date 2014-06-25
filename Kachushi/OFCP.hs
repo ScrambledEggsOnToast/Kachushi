@@ -18,17 +18,20 @@ import Control.DeepSeq
 --  Types
 ---------------------------
 
-data Row = Top | Middle | Bottom deriving (Show, Enum, Eq)
+data Row = Top | Middle | Bottom deriving (Show, Enum, Eq, Read)
 instance NFData Row where
 data Slot = Empty | Filled Card deriving (Show, Eq)
+instance NFData Slot where
 data Board = Board 
     { asArray :: Array Int Slot
     , nextTop :: Int
     , nextMiddle :: Int
     , nextBottom :: Int } deriving Show
 instance NFData Board where
-    rnf (Board arr t m b) = arr `seq` t `seq` m `seq` b `seq` ()
+    rnf (Board arr t m b) = (rnf arr) `seq` t `seq` m `seq` b `seq` ()
 data FilledBoard = FilledBoard { top :: [Card], middle :: [Card], bottom :: [Card] } deriving Show
+instance NFData FilledBoard where
+    rnf (FilledBoard t m b) = (rnf t) `seq` (rnf m) `seq` (rnf b)
 
 ---------------------------
 --  Constructors
@@ -145,8 +148,8 @@ score (FilledBoard t m b) = if compareHand t m == LT && compareHand m b == LT
 --  Board printer
 ---------------------------
 
-printBoard :: Board -> IO ()
-printBoard (Board arr _ _ _) = do
+showBoard :: Board -> String
+showBoard (Board arr _ _ _) =
     let cs = elems arr
         shown = map showSlot cs
         showSlot Empty = "[]"
@@ -156,4 +159,16 @@ printBoard (Board arr _ _ _) = do
         t = "  " : take 3 shown
         m = take 5 x
         b = take 5 y
-    mapM_ (putStrLn . unwords) [t,m,b]
+    in  unlines . map unwords $ [t,m,b]
+
+
+printBoard :: Board -> IO ()
+printBoard = putStr . showBoard
+
+showBoards :: [Board] -> String
+showBoards [a] = showBoard a
+showBoards [a,b] = showBoard b ++ showBoard a
+showBoards [a,b,c] = ((\[(b1,c1),(b2,c2),(b3,c3)] -> unlines [b1 ++ "       " ++ c1,b2 ++ "    " ++ c2,b3 ++ "    "++ c3]) $ zip (lines . showBoard $ b) (lines . showBoard $ c)) ++ "\n" ++ unlines (map ("         "++) (lines . showBoard $ a))
+showBoards [a,b,c,d] = unlines (map ("         "++) (lines . showBoard $ c)) ++ "\n" ++ showBoards [a,b,d]
+printBoards :: [Board] -> IO ()
+printBoards = putStr . showBoards

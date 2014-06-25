@@ -6,7 +6,9 @@ import Control.Applicative
 import Data.Word
 import Data.Bits
 import Data.Function (on)
+import Control.DeepSeq
 import qualified Data.Vector as V
+import qualified Data.Set as Set
 
 ---------------------------
 --  Types
@@ -35,6 +37,14 @@ instance Show Card where
                 D -> "d"
                 H -> "h"
                 S -> "s"
+instance Ord Card where
+    compare (Card _ r1 s1) (Card _ r2 s2) = if cr /= EQ then cr else cs
+        where 
+            cr = compare r1 r2
+            cs = compare s1 s2
+    a <= b = a == b || compare a b == LT 
+instance NFData Card where
+    rnf (Card b r s) = b `seq` r `seq` s `seq` ()
 instance Read (Card) where
     readsPrec d [r,s] = [(card or os,"")] 
         where
@@ -139,5 +149,5 @@ bits r s = rankBits r .|. suitBits s
 card :: Rank -> Suit -> Card
 card r s = Card (bits r s) r s
 
-fullDeck :: [Card]
-fullDeck = card <$> [R2 ..] <*> [C ..]
+fullDeck :: Set.Set Card
+fullDeck = Set.fromList $ card <$> [R2 ..] <*> [C ..]

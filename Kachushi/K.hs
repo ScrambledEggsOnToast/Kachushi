@@ -12,3 +12,7 @@ type K = StateT KState IO
 
 displayBoard :: Int -> K ()
 displayBoard n = do s <- get; liftIO $ printBoard . (!! n) . view boards $ s
+
+displayBoards :: K ()
+displayBoards = do s <- get; liftIO $ printBoards . view boards $ s
+

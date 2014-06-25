@@ -10,12 +10,13 @@ import Data.List ((\\))
 import Data.Array.ST
 import Control.Monad.ST
 import Control.Applicative
+import qualified Data.Set as Set
 
 ---------------------------
 --  Types
 ---------------------------
 
-data KState = KState { _boards :: [Board] , _deck :: [Card] } deriving Show
+data KState = KState { _boards :: [Board] , _deck :: Set.Set Card } deriving Show
 makeLenses ''KState
 
 ---------------------------
@@ -29,7 +30,7 @@ initialState n = KState (replicate n emptyBoard) fullDeck
 ---------------------------
 
 putCard :: MonadState KState m => Int -> Card -> Row -> m ()
-putCard n card row = modify $ over deck (\\ [card]) 
+putCard n card row = modify $ over deck (Set.\\ Set.fromList [card]) 
                             . over boards (over (element n) (putInBoard card row))
     where
         putInBoard card row board = let
@@ -72,6 +73,6 @@ putCards n crs = let
     in
         do
             state <- get
-            modify $ over deck (\\ map fst crs) 
+            modify $ over deck (Set.\\ (Set.fromList . map fst $ crs) )
                 . over boards (over (element n) (\brd -> (Board (boardArray brd) 
                     (t brd) (m brd) (b brd))))

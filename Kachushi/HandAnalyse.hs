@@ -32,7 +32,16 @@ data HandType =
 ---------------------------
 
 flush :: [Card] -> Bool
-flush = (/= 0) . foldl (.&.) 0xf000 . map binary
+flush cs = ss `elem` flushes
+    where
+        ss = map suit cs
+        flushes = 
+            [
+                [C,C,C,C,C]
+              , [D,D,D,D,D]
+              , [H,H,H,H,H]
+              , [S,S,S,S,S]
+            ]
 
 unique :: [Card] -> Word16
 unique = fromIntegral . (`shiftR` 16) . foldl (.|.) 0 . map binary
