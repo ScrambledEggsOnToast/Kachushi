@@ -97,7 +97,7 @@ printHand hand = do
     putStrLn ""
 
 
-pvc :: Int -> Int -> K [Board]
+pvc :: Int -> Int -> K ()
 pvc np pp = do
     [shuffled] <- grabble fullDeck 1 (np * 13)
     let hand13s = zip [0..] $ splice shuffled (replicate np 13)
@@ -128,7 +128,12 @@ pvc np pp = do
     displayBoards pp
 
     s <- get
-    return (view boards $ s)
+    liftIO $ do 
+        putStrLn ""
+        putStrLn "Final Score:"
+        print . scoreGame . map (fillBoard []) . view boards $ s
+
+    return ()
     
 
 main :: IO ()
@@ -138,6 +143,4 @@ main = do
     
     [n,p] <- liftM (map read) getArgs :: IO [Int]
 
-    brds <- evalStateT (pvc n p) (initialState n)
-    
-    print . scoreGame . map (fillBoard []) $ brds
+    evalStateT (pvc n p) (initialState n)
