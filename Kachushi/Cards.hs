@@ -19,7 +19,7 @@ import System.Console.ANSI (setSGR, SGR (SetColor, Reset), Color (Green, Cyan, R
 --  Types
 ---------------------------
 
-data Card = Card { binary :: !Word32, rank :: Rank, suit :: Suit }
+data Card = Card { binary :: {-# UNPACK #-} !Word32, rank :: !Rank, suit :: !Suit }
 instance Show Card where
     show (Card _ r s) = sr ++ ss
         where
@@ -93,6 +93,7 @@ instance Read (Rank) where
 
 ---------------------------
 --  Conversion from rank-suit representation to bit representation
+--      see http://www.suffecool.net/poker/evaluator.html
 ---------------------------
 
 rankBits :: Rank -> Word32
@@ -134,7 +135,9 @@ card r s = Card (bits r s) r s
 fullDeck :: [Card]
 fullDeck = card <$> [R2 ..] <*> [C ..]
 
-
+---------------------------
+--  Printer
+---------------------------
 
 colorPutCard :: Card -> IO ()
 colorPutCard c@(Card _ _ s) = do

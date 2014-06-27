@@ -19,6 +19,6 @@ executable Kachushi
   main-is:             Main.hs
   -- other-modules:       
   other-extensions:    TypeSynonymInstances, FlexibleInstances, TemplateHaskell, FlexibleContexts
-  build-depends:       base >=4.7 && <4.8, lens >=4.1 && <4.2, mtl >=2.1 && <2.2, MonadRandom >=0.1 && <0.2, array >=0.5 && <0.6, random >=1.0 && <1.1, static-hash >=0.0 && <0.1, parallel >=3.2.0 && <3.2.1, deepseq >=1.3.0 && <1.3.1, vector >=0.10.11 && <0.10.12, time >=1.4 && <1.5, monad-parallel >=0.7.1 && <0.7.2, containers >=0.5.5 && < 0.5.6, ansi-terminal >=0.6.1 && <0.6.2
+  build-depends:       base >=4.7 && <4.8, lens >=4.1 && <4.2, mtl >=2.1 && <2.2, MonadRandom >=0.1 && <0.2, array >=0.5 && <0.6, random >=1.0 && <1.1, static-hash >=0.0 && <0.1, parallel >=3.2.0 && <3.2.1, deepseq >=1.3.0 && <1.3.1, vector >=0.10.11 && <0.10.12, time >=1.4 && <1.5, monad-parallel >=0.7.1 && <0.7.2, containers >=0.5.5 && < 0.5.6, ansi-terminal >=0.6.1 && <0.6.2, poker-eval>=0.3 && <0.4
   -- hs-source-dirs:      
   default-language:    Haskell2010

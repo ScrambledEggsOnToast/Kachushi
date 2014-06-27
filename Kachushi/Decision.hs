@@ -24,13 +24,17 @@ import Data.List (maximumBy, sortBy, (\\))
 import Data.Function (on)
 import Data.Array (elems)
 
+---------------------------
+--  Instances
+---------------------------
+
 instance MP.MonadParallel m => MP.MonadParallel (StateT s m) where
     bindM2 f ma mb = 
         StateT (\s -> let f' a b = runStateT (f a b) s 
             in MP.bindM2 f' (evalStateT ma s) (evalStateT mb s))            
 
 ---------------------------
---  Constructor
+--  Constructors
 ---------------------------
 
 randomFills :: (MonadRandom m) => [Card] -> [Board] -> m [FilledBoard]
@@ -68,6 +72,7 @@ initialChoices = go [[]] 3 5
 ---------------------------
 --  Choosers
 ---------------------------
+
 rowsToBoard rs h = toBoard t m b where
     cs = zip rs h
     t = map snd . filter ((== Top) . fst) $ cs

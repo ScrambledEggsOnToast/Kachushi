@@ -196,8 +196,3 @@ printBoard (Board arr _ _ _) =
 
 printBoards :: Int -> [Board] -> IO ()
 printBoards pp = sequence_ . intersperse (putStrLn "") . map printBoard  
---printBoards pp = putStr . showBoards pp
-
-rotate :: Int -> [a] -> [a]
-rotate _ [] = []
-rotate n xs = zipWith const (drop n (cycle xs)) xs
