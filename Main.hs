@@ -46,7 +46,9 @@ checkedGetRow n = do
         Middle -> if m == 9 then checkedGetRow n else return Middle
         Bottom -> if b == 14 then checkedGetRow n else return Bottom
 
-requestRow :: Int -> Card -> K Row
+-- Present a card and request a row from the player, ensuring that there
+-- is space in the row of the nth board for that card
+requestRow :: Int -> Card -> K Row 
 requestRow n c = do
     liftIO $ colorPutCard c
     liftIO $ putStr ": "

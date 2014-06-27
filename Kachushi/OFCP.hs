@@ -164,12 +164,6 @@ scoreMatch brd1@(FilledBoard t1 m1 b1) brd2@(FilledBoard t2 m2 b2)
 fouled :: FilledBoard -> Bool
 fouled (FilledBoard t m b) = compareHand t m == GT || compareHand m b == GT
 
-score :: FilledBoard -> Int
-score (FilledBoard t m b) = 
-    if compareHand t m == LT && compareHand m b == LT 
-        then 6 + sum [royalty Top t, royalty Middle m, royalty Bottom b]
-        else (-6)
-
 ---------------------------
 --  Board printer
 ---------------------------
